@@ -135,10 +135,10 @@ async function doTheThing(
     regrouped.forEach(({ range, campsites }) => {
       const { start, end } = range;
       const diff = Math.round(start.diffNow("week").as("weeks"));
-      console.log(`${formatRange(start, end)} (in ${diff} ${diff === 1 ? "week" : "weeks"}):`);
+      console.log(`${campground.getName()} - ${formatRange(start, end)} (in ${diff} ${diff === 1 ? "week" : "weeks"}):`);
 
       campsites.forEach((site) => {
-        console.log(`- ${site.getName()} ${site.getUrl()}`);
+        console.log(`- ${site.getName()}`);
       });
     });
   } else {
@@ -153,7 +153,7 @@ enum APIChoice {
 
 type Argv = {
   api: APIChoice;
-  campground: string;
+  campgrounds: string;
   day: string;
   nights: number;
   months: number;
@@ -166,7 +166,10 @@ function pickAPI(choice: APIChoice) {
 async function main(argv: Argv) {
   try {
     const api = pickAPI(argv.api);
-    await doTheThing(api, argv.campground, dayToWeekday(argv.day), argv.nights, argv.months);
+    const campgrounds = argv.campgrounds.split(',');
+    campgrounds.forEach(async campground => {
+      await doTheThing(api, campground, dayToWeekday(argv.day), argv.nights, argv.months);
+    });
   } catch (e) {
     console.error(e.message);
     process.exit(1);
@@ -192,9 +195,9 @@ if (require.main === module) {
       default: "recreation_gov",
       description: "Which reservation API to search",
     })
-    .option("campground", {
+    .option("campgrounds", {
       alias: "c",
-      type: "number",
+      type: "string",
       description: "Campground's identifier",
       required: true,
     })

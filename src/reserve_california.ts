@@ -137,20 +137,31 @@ class Campsite implements ICampsite {
   }
 }
 
-export async function getCampsites(
+async function getCampsitesInternal(
   campgroundId: string,
-  monthsToCheck: number
+  monthsToAdd: number
 ): Promise<Campsite[]> {
-  const start = DateTime.local().startOf("day");
-  const end = start.plus({ months: monthsToCheck });
+  const start = DateTime.local().startOf("day").plus({ months: monthsToAdd });
 
   const request = {
     FacilityId: campgroundId,
-    StartDate: start.toFormat(API_DATE_FORMAT),
-    EndDate: end.toFormat(API_DATE_FORMAT),
+    StartDate: start.toFormat(API_DATE_FORMAT)
   };
 
   const response = await makePostRequest<API.GridResponse>(API_ENDPOINT, request);
 
   return Object.values(response.data.Facility.Units).map((data) => new Campsite(data as API.Unit));
+}
+
+export async function getCampsites(
+  campgroundId: string,
+  monthsToCheck: number
+): Promise<Campsite[]> {
+  let campsites: Campsite[] = [];
+
+  for (let monthToAdd = 0; monthToAdd < monthsToCheck; monthToAdd++) {
+    campsites = campsites.concat(await getCampsitesInternal(campgroundId, monthToAdd));
+  }
+
+  return campsites;
 }
